@@ -286,3 +286,24 @@ class CrossModelInteraction(Base):
     interaction_type = Column(String)
     success = Column(Boolean, default=True)
     timestamp = Column(DateTime, default=datetime.utcnow)
+
+class ExperimentReport(Base):
+    __tablename__ = 'experiment_reports'
+    
+    id = Column(Integer, primary_key=True, index=True)
+    experiment_id = Column(Integer, ForeignKey('experiments.id'))
+    generated_at = Column(DateTime, default=datetime.utcnow)
+    report_version = Column(Integer, default=1)
+    
+    overview = Column(String) 
+    safety_analysis = Column(String) 
+    economic_analysis = Column(String) 
+    social_analysis = Column(String) 
+    governance_analysis = Column(String) 
+    ai_behaviour_analysis = Column(String) 
+    model_comparison = Column(String) 
+    cross_model_analysis = Column(String) 
+    important_events = Column(String) 
+    findings = Column(String) 
+    limitations = Column(String) 
+    conclusion = Column(String)

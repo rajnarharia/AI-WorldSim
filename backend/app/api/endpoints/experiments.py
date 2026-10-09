@@ -102,3 +102,116 @@ def get_model_comparison(exp_id: int, db: Session = Depends(database.get_db)):
             "min": round(r.min, 2)
         }
     return comparison
+
+from app.simulation.final_analysis_engine import FinalAnalysisEngine
+from fastapi.responses import JSONResponse, Response, StreamingResponse
+from fastapi import HTTPException
+import csv
+import io
+import json
+
+@router.post("/{exp_id}/generate-report")
+def generate_report(exp_id: int, db: Session = Depends(database.get_db)):
+    engine = FinalAnalysisEngine(db, exp_id)
+    try:
+        report = engine.generate_full_report()
+        return {"status": "success", "report_id": report.id}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.get("/{exp_id}/report")
+def get_report(exp_id: int, db: Session = Depends(database.get_db)):
+    report = db.query(models.ExperimentReport).filter(models.ExperimentReport.experiment_id == exp_id).order_by(models.ExperimentReport.report_version.desc()).first()
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
+    
+    return {
+        "id": report.id,
+        "experiment_id": report.experiment_id,
+        "generated_at": report.generated_at,
+        "version": report.report_version,
+        "overview": json.loads(report.overview or '{}'),
+        "safety_analysis": json.loads(report.safety_analysis or '{}'),
+        "economic_analysis": json.loads(report.economic_analysis or '{}'),
+        "social_analysis": json.loads(report.social_analysis or '{}'),
+        "governance_analysis": json.loads(report.governance_analysis or '{}'),
+        "ai_behaviour_analysis": json.loads(report.ai_behaviour_analysis or '{}'),
+        "cross_model_analysis": json.loads(report.cross_model_analysis or '{}'),
+        "important_events": json.loads(report.important_events or '[]'),
+        "findings": json.loads(report.findings or '[]'),
+        "limitations": json.loads(report.limitations or '[]'),
+        "conclusion": report.conclusion
+    }
+
+@router.get("/{exp_id}/analysis")
+def get_analysis(exp_id: int, db: Session = Depends(database.get_db)):
+    report = db.query(models.ExperimentReport).filter(models.ExperimentReport.experiment_id == exp_id).order_by(models.ExperimentReport.report_version.desc()).first()
+    if not report: raise HTTPException(status_code=404, detail="Report not found")
+    return {
+        "safety": json.loads(report.safety_analysis or '{}'),
+        "economic": json.loads(report.economic_analysis or '{}'),
+        "social": json.loads(report.social_analysis or '{}'),
+        "governance": json.loads(report.governance_analysis or '{}'),
+        "ai_behaviour": json.loads(report.ai_behaviour_analysis or '{}'),
+    }
+
+@router.get("/{exp_id}/findings")
+def get_findings(exp_id: int, db: Session = Depends(database.get_db)):
+    report = db.query(models.ExperimentReport).filter(models.ExperimentReport.experiment_id == exp_id).order_by(models.ExperimentReport.report_version.desc()).first()
+    if not report: raise HTTPException(status_code=404, detail="Report not found")
+    return json.loads(report.findings or '[]')
+
+@router.get("/{exp_id}/limitations")
+def get_limitations(exp_id: int, db: Session = Depends(database.get_db)):
+    report = db.query(models.ExperimentReport).filter(models.ExperimentReport.experiment_id == exp_id).order_by(models.ExperimentReport.report_version.desc()).first()
+    if not report: raise HTTPException(status_code=404, detail="Report not found")
+    return json.loads(report.limitations or '[]')
+
+@router.get("/{exp_id}/export/json")
+def export_json(exp_id: int, db: Session = Depends(database.get_db)):
+    report = db.query(models.ExperimentReport).filter(models.ExperimentReport.experiment_id == exp_id).order_by(models.ExperimentReport.report_version.desc()).first()
+    if not report: raise HTTPException(status_code=404, detail="Report not found")
+    
+    data = {
+        "experiment_id": report.experiment_id,
+        "overview": json.loads(report.overview or '{}'),
+        "findings": json.loads(report.findings or '[]'),
+        "conclusion": report.conclusion
+    }
+    return JSONResponse(content=data, headers={"Content-Disposition": f"attachment; filename=\"report_{exp_id}.json\""})
+
+@router.get("/{exp_id}/export/csv")
+def export_csv(exp_id: int, db: Session = Depends(database.get_db)):
+    runs = db.query(models.ExperimentRun).filter(models.ExperimentRun.experiment_id == exp_id).all()
+    run_ids = [r.id for r in runs]
+    metrics = db.query(models.MetricResult).filter(models.MetricResult.run_id.in_(run_ids)).all()
+    
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["tick", "simulation_day", "category", "metric_name", "model_type", "metric_value"])
+    for m in metrics:
+        writer.writerow([m.tick, m.simulation_day, m.category, m.metric_name, m.model_type, m.metric_value])
+        
+    response = Response(content=output.getvalue(), media_type="text/csv")
+    response.headers["Content-Disposition"] = f"attachment; filename=\"metrics_{exp_id}.csv\""
+    return response
+
+@router.get("/{exp_id}/export/pdf")
+def export_pdf(exp_id: int, db: Session = Depends(database.get_db)):
+    report = db.query(models.ExperimentReport).filter(models.ExperimentReport.experiment_id == exp_id).order_by(models.ExperimentReport.report_version.desc()).first()
+    if not report: raise HTTPException(status_code=404, detail="Report not found")
+    
+    try:
+        from fpdf import FPDF
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", size=12)
+        pdf.cell(200, 10, txt="AI WorldSim Final Report", ln=1, align="C")
+        pdf.cell(200, 10, txt=f"Experiment ID: {exp_id}", ln=1, align="C")
+        pdf.multi_cell(0, 10, txt=f"Conclusion: {report.conclusion}")
+        
+        pdf_bytes = bytes(pdf.output())
+        return Response(content=pdf_bytes, media_type="application/pdf", headers={"Content-Disposition": f"attachment; filename=\"report_{exp_id}.pdf\""})
+    except ImportError:
+        text = f"AI WorldSim Final Report\nExperiment ID: {exp_id}\nConclusion:\n{report.conclusion}\n"
+        return Response(content=text, media_type="text/plain", headers={"Content-Disposition": f"attachment; filename=\"report_{exp_id}.txt\""})
