@@ -104,8 +104,40 @@ class SimulationEngine:
         agents = db.query(Agent).all()
         locations = db.query(Location).all()
         
-        self.world_state.agents = {a.id: {"id": a.id, "name": a.name, "location_id": a.current_location_id, "money": a.money} for a in agents}
-        self.world_state.locations = {l.id: {"id": l.id, "name": l.name, "type": l.type, "capacity": l.capacity} for l in locations}
+        self.world_state.agents = {
+            a.id: {
+                "id": a.id,
+                "name": a.name,
+                "model_type": a.model_type or "Model A",
+                "personality": a.personality or "Balanced",
+                "location_id": a.current_location_id,
+                "current_location_id": a.current_location_id,
+                "money": round(float(a.money or 0.0), 2),
+                "health": round(float(a.health or 100.0), 1),
+                "energy": round(float(a.energy or 100.0), 1),
+                "age": int(a.age or 25),
+                "job_id": a.job_id,
+                "education_level": int(a.education_level or 1),
+                "need_rest": max(0.0, 100.0 - float(a.energy or 100.0)),
+                "need_money": float(getattr(a, 'need_financial', 50.0) or 50.0),
+                "need_health": max(0.0, 100.0 - float(a.health or 100.0)),
+                "need_social": float(getattr(a, 'need_social', 50.0) or 50.0),
+            }
+            for a in agents
+        }
+        self.world_state.locations = {
+            l.id: {
+                "id": l.id,
+                "name": l.name,
+                "type": l.type,
+                "capacity": l.capacity,
+                "x": l.x,
+                "y": l.y,
+                "pos_x": l.x if l.x > 50 else (l.x * 9 + 40),
+                "pos_y": l.y if l.y > 50 else (l.y * 7 + 40),
+            }
+            for l in locations
+        }
 
     def _get_time_components(self):
         return self.world_state.simulation_day, self.world_state.simulation_time_str

@@ -11,6 +11,8 @@ Base.metadata.create_all(bind=engine)
 db = SessionLocal()
 try:
     seed_data(db)
+    from app.simulation.engine import sim_engine
+    sim_engine._load_world_state(db)
 finally:
     db.close()
 
