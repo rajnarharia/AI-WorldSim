@@ -9,8 +9,10 @@ backend/venv/
 backend/__pycache__/
 **/*.pyc
 backend/.env
-backend/simulator.db
+backend/simulator.db*
+.pytest_cache/
 
 # OS
 .DS_Store
 Thumbs.db
+desktop.ini
