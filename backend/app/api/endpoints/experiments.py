@@ -205,10 +205,15 @@ def export_pdf(exp_id: int, db: Session = Depends(database.get_db)):
         from fpdf import FPDF
         pdf = FPDF()
         pdf.add_page()
-        pdf.set_font("Arial", size=12)
-        pdf.cell(200, 10, txt="AI WorldSim Final Report", ln=1, align="C")
-        pdf.cell(200, 10, txt=f"Experiment ID: {exp_id}", ln=1, align="C")
-        pdf.multi_cell(0, 10, txt=f"Conclusion: {report.conclusion}")
+        pdf.set_font("helvetica", size=14)
+        try:
+            pdf.cell(200, 10, text="AI WorldSim Final Report", align="C", new_x="LMARGIN", new_y="NEXT")
+            pdf.cell(200, 10, text=f"Experiment ID: {exp_id}", align="C", new_x="LMARGIN", new_y="NEXT")
+            pdf.multi_cell(0, 10, text=f"Conclusion: {report.conclusion}")
+        except TypeError:
+            pdf.cell(200, 10, txt="AI WorldSim Final Report", ln=1, align="C")
+            pdf.cell(200, 10, txt=f"Experiment ID: {exp_id}", ln=1, align="C")
+            pdf.multi_cell(0, 10, txt=f"Conclusion: {report.conclusion}")
         
         pdf_bytes = bytes(pdf.output())
         return Response(content=pdf_bytes, media_type="application/pdf", headers={"Content-Disposition": f"attachment; filename=\"report_{exp_id}.pdf\""})

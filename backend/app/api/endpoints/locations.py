@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from app.database import models, database
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import List
 
 router = APIRouter()
@@ -17,11 +17,8 @@ class LocationCreate(LocationBase):
     pass
 
 class LocationResponse(LocationBase):
+    model_config = ConfigDict(from_attributes=True)
     id: int
-
-    class Config:
-        orm_mode = True
-        from_attributes = True
 
 @router.get("/", response_model=List[LocationResponse])
 def get_locations(db: Session = Depends(database.get_db)):
