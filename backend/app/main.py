@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database.database import engine, Base, SessionLocal
+from app.database import models
 from app.api import api_router
 from app.database.seeder import seed_data
 

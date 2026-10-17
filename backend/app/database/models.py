@@ -307,3 +307,72 @@ class ExperimentReport(Base):
     findings = Column(String) 
     limitations = Column(String) 
     conclusion = Column(String)
+
+
+class ModelConfiguration(Base):
+    __tablename__ = "model_configurations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    model_slot = Column(String, index=True)  # "Model A", "Model B", "Model C", "Single"
+    provider = Column(String)                # "Google Gemini", "OpenAI-compatible", etc.
+    model_name = Column(String)              # "gemini-1.5-pro", "gpt-4o", etc.
+    api_key_masked = Column(String)          # Masked preview e.g. "AIZa...9xQ2", NEVER plain secret
+    api_key_hash = Column(String, nullable=True) # Optional hash or identifier
+    base_url = Column(String, nullable=True) # Custom endpoint URL if applicable
+    connection_status = Column(String, default="Not Tested") # "Connected", "Connection Failed", "Not Tested"
+    latency_ms = Column(Float, nullable=True)
+    error_message = Column(String, nullable=True)
+    last_tested_at = Column(DateTime, nullable=True)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class ImpactSimulationRun(Base):
+    __tablename__ = "impact_simulations"
+
+    id = Column(String, primary_key=True, index=True) # UUUDString
+    name = Column(String, index=True)
+    role = Column(String, index=True) # POLICE, GOVERNMENT, CITIZEN, BUSINESS, CAR
+    model_slot = Column(String)       # "Model A", "Single", etc.
+    model_name = Column(String)
+    provider = Column(String)
+    seed = Column(Integer, default=42)
+    total_loops = Column(Integer, default=10)
+    completed_loops = Column(Integer, default=0)
+    status = Column(String, default="INITIALIZED") # INITIALIZED, RUNNING, COMPLETED, PAUSED, FAILED
+
+    initial_state_json = Column(String)  # JSON text
+    final_state_json = Column(String, nullable=True) # JSON text
+    comparison_json = Column(String, nullable=True) # JSON text
+    impact_analysis_json = Column(String, nullable=True) # JSON text
+    error_message = Column(String, nullable=True)
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    cycles = relationship("SimulationCycleRecord", back_populates="simulation", cascade="all, delete-orphan")
+
+
+class SimulationCycleRecord(Base):
+    __tablename__ = "simulation_cycle_records"
+
+    id = Column(Integer, primary_key=True, index=True)
+    simulation_id = Column(String, ForeignKey("impact_simulations.id"), index=True)
+    cycle_number = Column(Integer, index=True)
+    timestamp = Column(DateTime, default=datetime.utcnow)
+    role = Column(String)
+
+    # State tracking
+    previous_state_json = Column(String)
+    current_state_json = Column(String)
+    active_conditions_json = Column(String)
+    prompt_text = Column(String)
+    ai_decision_json = Column(String)
+    validation_result_json = Column(String)
+    resources_before_json = Column(String)
+    resources_used_json = Column(String)
+    resources_after_json = Column(String)
+    state_changes_json = Column(String)
+    outcomes_json = Column(String)
+
+    simulation = relationship("ImpactSimulationRun", back_populates="cycles")

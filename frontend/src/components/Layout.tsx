@@ -1,10 +1,11 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Activity, Map, Users, DollarSign, BookOpen, Heart, MessageSquare, Shield, FileText, BarChart2, FlaskConical, LayoutDashboard, Settings, Target } from 'lucide-react';
+import { Activity, Map, Users, DollarSign, BookOpen, Heart, MessageSquare, Shield, FileText, BarChart2, FlaskConical, LayoutDashboard, Settings, Target, Zap } from 'lucide-react';
 import SimulationControls from './SimulationControls';
 
 const navItems = [
     { name: 'Overview', path: '/', icon: LayoutDashboard },
+    { name: 'AI Impact Simulator', path: '/impact', icon: Zap },
     { name: 'Live Simulation', path: '/simulation', icon: Map },
     { name: 'AI Agents', path: '/agents', icon: Users },
     { name: 'Economy', path: '/economy', icon: DollarSign },

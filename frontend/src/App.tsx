@@ -14,6 +14,7 @@ import SafetyGov from './pages/SafetyGov';
 import EventLogs from './pages/EventLogs';
 import FinalReport from './pages/FinalReport';
 import InteractionMatrix from './pages/InteractionMatrix';
+import ImpactSimulator from './pages/ImpactSimulator';
 
 export default function App() {
     return (
@@ -21,6 +22,7 @@ export default function App() {
             <Layout>
                 <Routes>
                     <Route path="/" element={<Overview />} />
+                    <Route path="/impact" element={<ImpactSimulator />} />
                     <Route path="/simulation" element={<LiveSimulation />} />
                     <Route path="/agents" element={<AgentsList />} />
                     <Route path="/economy" element={<Economy />} />

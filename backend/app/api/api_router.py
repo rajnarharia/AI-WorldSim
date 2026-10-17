@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.endpoints import agents, simulation, metrics, locations, dashboards, experiments
+from app.api.endpoints import agents, simulation, metrics, locations, dashboards, experiments, impact_simulator
 
 router = APIRouter()
 
@@ -10,3 +10,4 @@ router.include_router(locations.router, prefix="/locations", tags=["locations"])
 router.include_router(dashboards.router, prefix="/dashboards", tags=["dashboards"])
 router.include_router(experiments.router, prefix="/experiments", tags=["experiments"])
 router.include_router(experiments.router, prefix="/metrics/experiments", tags=["metrics-experiments"])
+router.include_router(impact_simulator.router, prefix="/impact", tags=["impact-simulator"])
